@@ -5,16 +5,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: arduino/compile-sketches@v1
-        with:
-          sketch-paths: |
-            .
-          fqbn: esp32:esp32:esp32
-          libraries: |
-            - name: TFT_eSPI
+      - name: Setup Arduino CLI
+        uses: arduino/setup-arduino-cli@v1
+      - name: Install ESP32 core and libs
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@2.0.11
+          arduino-cli lib install "TFT_eSPI"
+          arduino-cli lib install "SPI"
+          mkdir -p ~/Arduino/libraries/TFT_eSPI
+          cp User_Setup.h ~/Arduino/libraries/TFT_eSPI/User_Setup.h || echo "no User_Setup.h"
+      - name: Compile
+        run: |
+          mkdir -p build
+          arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir build ./WAVE125i_Ultimate_SinglePage.ino --verbose || arduino-cli compile --fqbn esp32:esp32:esp32 --output-dir build . --verbose
       - name: Upload BIN
         uses: actions/upload-artifact@v4
         with:
           name: WAVE125i-Ultimate-BIN
-          path: |
-            **/*.bin
+          path: build/*.bin
+        
